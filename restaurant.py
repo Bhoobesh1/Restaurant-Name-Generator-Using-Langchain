@@ -8,7 +8,13 @@ st.set_page_config(page_title="Restaurant Name Generator", layout="centered")
 st.title("🍽️ Restaurant Name Generator")
 
 cuisine = st.sidebar.text_input("Enter the Cuisine",placeholder="Enter the Cuisine")
-
+no_of_items = st.sidebar.number_input(
+    "Enter number of menu items",
+    min_value=1,
+    max_value=50,
+    value=10,
+    step=1
+)
 generate = st.sidebar.button(
     "Generate",
     key="generate_btn"
@@ -28,9 +34,9 @@ prompt_template_name = PromptTemplate(
 )
 
 prompt_template_items = PromptTemplate(
-    input_variables=["restaurant_name"],
+    input_variables=["restaurant_name","no_of_items"],
     template = """
-Generate exactly 10 menu items for the restaurant "{restaurant_name}".
+Generate exactly {no_of_items} menu items for the restaurant "{restaurant_name}".
 
 Rules:
 - Number each item clearly using this format only:
@@ -48,13 +54,14 @@ Return only the numbered list.
 # ---------------- Sequential Chain ----------------
 def sequential_chain(inputs):
     cuisine = inputs["cuisine"]
+    no_of_items=inputs["no_of_items"]
 
     restaurant_name = llm.invoke(
         prompt_template_name.format(cuisine=cuisine)
     ).content.strip()
 
     menu_items = llm.invoke(
-        prompt_template_items.format(restaurant_name=restaurant_name)
+        prompt_template_items.format(restaurant_name=restaurant_name,no_of_items=no_of_items)
     ).content.strip()
 
     return {
@@ -67,7 +74,7 @@ chain = RunnableLambda(sequential_chain)
 # ---------------- Run App ----------------
 if generate:
     with st.spinner("Generating restaurant details..."):
-        response = chain.invoke({"cuisine": cuisine})
+        response = chain.invoke({"cuisine": cuisine, "no_of_items":no_of_items})
 
     st.success("Done!")
 
